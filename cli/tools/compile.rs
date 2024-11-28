@@ -17,8 +17,6 @@ use deno_core::resolve_url_or_path;
 use deno_core::serde_json;
 use deno_graph::GraphKind;
 use deno_terminal::colors;
-use eszip::v2::FromGraphNpmPackages;
-use eszip::FromGraphOptions;
 use rand::Rng;
 use std::path::Path;
 use std::path::PathBuf;
