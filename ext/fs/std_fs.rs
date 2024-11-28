@@ -1078,6 +1078,7 @@ fn open_with_access_check(
   path: &Path,
   access_check: Option<AccessCheckCb>,
 ) -> FsResult<std::fs::File> {
+  log::debug!("open_with_access_check {}", path.display());
   if let Some(access_check) = access_check {
     let path_bytes = path.as_os_str().as_encoded_bytes();
     let is_windows_device_path = cfg!(windows)
@@ -1135,6 +1136,8 @@ fn open_with_access_check(
         opts.custom_flags(libc::O_NOFOLLOW);
       }
     }
+
+    log::debug!("opening with options: {opts:?}");
 
     Ok(opts.open(&path)?)
   } else {

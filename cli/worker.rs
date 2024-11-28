@@ -175,8 +175,8 @@ impl SharedWorkerState {
 }
 
 pub struct CliMainWorker {
-  main_module: ModuleSpecifier,
-  worker: MainWorker,
+  pub main_module: ModuleSpecifier,
+  pub worker: MainWorker,
   shared: Arc<SharedWorkerState>,
 }
 
@@ -188,6 +188,14 @@ impl CliMainWorker {
   pub async fn setup_repl(&mut self) -> Result<(), AnyError> {
     self.worker.run_event_loop(false).await?;
     Ok(())
+  }
+
+  pub fn low_memory_notification(&mut self) {
+    self
+      .worker
+      .js_runtime
+      .v8_isolate()
+      .low_memory_notification();
   }
 
   pub async fn run(&mut self) -> Result<i32, AnyError> {

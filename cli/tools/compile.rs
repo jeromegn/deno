@@ -14,8 +14,11 @@ use deno_core::anyhow::Context;
 use deno_core::error::generic_error;
 use deno_core::error::AnyError;
 use deno_core::resolve_url_or_path;
+use deno_core::serde_json;
 use deno_graph::GraphKind;
 use deno_terminal::colors;
+use eszip::v2::FromGraphNpmPackages;
+use eszip::FromGraphOptions;
 use rand::Rng;
 use std::path::Path;
 use std::path::PathBuf;
@@ -51,7 +54,7 @@ pub async fn compile(
     );
   }
 
-  let output_path = resolve_compile_executable_output_path(
+  let mut output_path = resolve_compile_executable_output_path(
     http_client,
     &compile_flags,
     cli_options.initial_cwd(),
@@ -91,6 +94,65 @@ pub async fn compile(
       )
       .chain(include_files.iter()),
   );
+
+  // if compile_flags.eszip_only {
+  //   // println!("using graph: {graph:?}");
+  //   let parsed_source_cache = factory.parsed_source_cache();
+
+  //   let (transpile_options, emit_options) =
+  //     crate::args::ts_config_to_transpile_and_emit_options(
+  //       ts_config_for_emit.ts_config,
+  //     )?;
+
+  //   println!("transpile options: {transpile_options:#?}");
+  //   println!("emit options: {emit_options:#?}");
+
+  //   let roots = graph.roots.clone();
+  //   let mut zip = eszip::EszipV2::from_graph(FromGraphOptions {
+  //     graph,
+  //     parser: parsed_source_cache.as_capturing_parser(),
+  //     transpile_options,
+  //     emit_options,
+  //     relative_file_base: None,
+  //     npm_packages: None,
+  //   })?;
+
+  //   let source_map: &[u8] = &[];
+  //   zip.add_to_front(
+  //     eszip::ModuleKind::Json,
+  //     "__roots".into(),
+  //     serde_json::to_vec(&roots)?,
+  //     source_map,
+  //   );
+
+  //   println!("specifiers:");
+  //   for spec in zip.specifiers() {
+  //     println!(
+  //       "{spec}: {:?}",
+  //       zip.get_module(&spec).map(|module| module.kind)
+  //     );
+  //   }
+
+  //   if let Some(deno_json) = cli_options.workspace().root_deno_json() {
+  //     println!("deno json ({}): {:?}", deno_json.specifier, deno_json.json);
+
+  //     zip.add_import_map(
+  //       eszip::ModuleKind::Json,
+  //       "__deno_json".into(),
+  //       serde_json::to_vec(&deno_json.json)?.into(),
+  //     );
+  //   }
+
+  //   output_path.set_extension("eszip");
+  //   std::fs::write(&output_path, zip.into_bytes())?;
+
+  //   return Ok(());
+  // }
+
+  if compile_flags.bytes_only {
+    output_path.set_extension("deno");
+  }
+
   log::debug!("Binary root dir: {}", root_dir_url);
   log::info!(
     "{} {} to {}",
@@ -136,13 +198,17 @@ pub async fn compile(
   #[cfg(unix)]
   let write_result = write_result.and_then(|_| {
     use std::os::unix::fs::PermissionsExt;
-    let perms = std::fs::Permissions::from_mode(0o755);
-    std::fs::set_permissions(&temp_path, perms).with_context(|| {
-      format!(
-        "Setting permissions on temporary file '{}'",
-        temp_path.display()
-      )
-    })
+    if !compile_flags.bytes_only {
+      let perms = std::fs::Permissions::from_mode(0o755);
+      std::fs::set_permissions(&temp_path, perms).with_context(|| {
+        format!(
+          "Setting permissions on temporary file '{}'",
+          temp_path.display()
+        )
+      })
+    } else {
+      Ok(())
+    }
   });
 
   let write_result = write_result.and_then(|_| {
@@ -395,6 +461,8 @@ mod test {
         no_terminal: false,
         icon: None,
         include: vec![],
+        eszip_only: false,
+        bytes_only: false,
       },
       &std::env::current_dir().unwrap(),
     )
@@ -420,6 +488,8 @@ mod test {
         include: vec![],
         icon: None,
         no_terminal: false,
+        eszip_only: false,
+        bytes_only: false,
       },
       &std::env::current_dir().unwrap(),
     )

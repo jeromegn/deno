@@ -81,6 +81,7 @@ impl FileSystem for DenoCompileFileSystem {
     options: OpenOptions,
     access_check: Option<AccessCheckCb>,
   ) -> FsResult<Rc<dyn File>> {
+    log::debug!("open sync {}", path.display());
     if self.0.is_path_within(path) {
       Ok(self.0.open_file(path)?)
     } else {
@@ -93,9 +94,11 @@ impl FileSystem for DenoCompileFileSystem {
     options: OpenOptions,
     access_check: Option<AccessCheckCb<'a>>,
   ) -> FsResult<Rc<dyn File>> {
+    log::debug!("open async {}", path.display());
     if self.0.is_path_within(&path) {
       Ok(self.0.open_file(&path)?)
     } else {
+      log::debug!("trying with realfs!");
       RealFs.open_async(path, options, access_check).await
     }
   }

@@ -126,6 +126,8 @@ pub struct CompileFlags {
   pub no_terminal: bool,
   pub icon: Option<String>,
   pub include: Vec<String>,
+  pub eszip_only: bool,
+  pub bytes_only: bool,
 }
 
 impl CompileFlags {
@@ -1974,6 +1976,18 @@ On the first invocation with deno will download the proper binary and cache it i
           .help("Hide terminal on Windows")
           .action(ArgAction::SetTrue)
           .help_heading(COMPILE_HEADING),
+      )
+      .arg(
+        Arg::new("eszip-only")
+          .long("eszip-only")
+          .help("Produce a eszip only...")
+          .action(ArgAction::SetTrue),
+      )
+      .arg(
+        Arg::new("bytes-only")
+          .long("bytes-only")
+          .help("Produce a bytes only...")
+          .action(ArgAction::SetTrue)
       )
       .arg(
         Arg::new("icon")
@@ -4611,6 +4625,8 @@ fn compile_parse(
   let target = matches.remove_one::<String>("target");
   let icon = matches.remove_one::<String>("icon");
   let no_terminal = matches.get_flag("no-terminal");
+  let eszip_only = matches.get_flag("eszip-only");
+  let bytes_only = matches.get_flag("bytes-only");
   let include = match matches.remove_many::<String>("include") {
     Some(f) => f.collect(),
     None => vec![],
@@ -4627,6 +4643,8 @@ fn compile_parse(
     no_terminal,
     icon,
     include,
+    eszip_only,
+    bytes_only,
   });
 
   Ok(())
@@ -10293,7 +10311,9 @@ mod tests {
           target: None,
           no_terminal: false,
           icon: None,
-          include: vec![]
+          include: vec![],
+          eszip_only: false,
+          bytes_only: false,
         }),
         type_check_mode: TypeCheckMode::Local,
         code_cache_enabled: true,
@@ -10317,7 +10337,9 @@ mod tests {
           target: None,
           no_terminal: true,
           icon: Some(String::from("favicon.ico")),
-          include: vec![]
+          include: vec![],
+          eszip_only: false,
+          bytes_only: false,
         }),
         import_map_path: Some("import_map.json".to_string()),
         no_remote: true,

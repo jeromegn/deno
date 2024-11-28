@@ -251,8 +251,8 @@ pub struct StandaloneData {
 }
 
 pub struct StandaloneModules {
-  remote_modules: RemoteModulesStore,
-  vfs: Arc<FileBackedVfs>,
+  pub remote_modules: RemoteModulesStore,
+  pub vfs: Arc<FileBackedVfs>,
 }
 
 impl StandaloneModules {
@@ -553,7 +553,7 @@ impl<'a> DenoCompileBinaryWriter<'a> {
   #[allow(clippy::too_many_arguments)]
   async fn write_standalone_binary(
     &self,
-    writer: File,
+    mut writer: File,
     original_bin: Vec<u8>,
     graph: &ModuleGraph,
     root_dir_url: StandaloneRelativeFileBaseUrl<'_>,
@@ -782,6 +782,18 @@ impl<'a> DenoCompileBinaryWriter<'a> {
       },
       otel_config: self.cli_options.otel_config(),
     };
+
+    if compile_flags.bytes_only {
+      let data_section_bytes = serialize_binary_data_section(
+        &metadata,
+        npm_snapshot.map(|s| s.into_serialized()),
+        &remote_modules_store,
+        vfs,
+      )?;
+
+      writer.write_all(&data_section_bytes)?;
+      return Ok(());
+    }
 
     write_binary_bytes(
       writer,

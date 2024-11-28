@@ -1082,6 +1082,7 @@ impl CliOptions {
               .with_context(|| {
                 format!("Unable to load '{}' import map", specifier)
               })?;
+
           Some(deno_config::workspace::SpecifiedImportMap {
             base_url: specifier,
             value,
@@ -1090,6 +1091,7 @@ impl CliOptions {
         None => None,
       }
     };
+
     Ok(self.workspace().create_resolver(
       CreateResolverOptions {
         pkg_json_dep_resolution,
@@ -1849,21 +1851,41 @@ fn resolve_import_map_specifier(
   maybe_config_file: Option<&ConfigFile>,
   current_dir: &Path,
 ) -> Result<Option<ModuleSpecifier>, AnyError> {
-  if let Some(import_map_path) = maybe_import_map_path {
-    if let Some(config_file) = &maybe_config_file {
-      if config_file.json.import_map.is_some() {
-        log::warn!("{} the configuration file \"{}\" contains an entry for \"importMap\" that is being ignored.", colors::yellow("Warning"), config_file.specifier);
+  let res = match (maybe_import_map_path, maybe_config_file) {
+    (Some(import_map_path), maybe_config_file) => {
+      if let Some(config_file) = &maybe_config_file {
+        if config_file.json.import_map.is_some() {
+          log::warn!("{} the configuration file \"{}\" contains an entry for \"importMap\" that is being ignored.", colors::yellow("Warning"), config_file.specifier);
+        }
       }
+      Some(
+        deno_core::resolve_url_or_path(import_map_path, current_dir)
+          .with_context(|| {
+            format!("Bad URL (\"{import_map_path}\") for import map.")
+          })?,
+      )
     }
-    let specifier =
-      deno_core::resolve_url_or_path(import_map_path, current_dir)
-        .with_context(|| {
-          format!("Bad URL (\"{import_map_path}\") for import map.")
-        })?;
-    Ok(Some(specifier))
-  } else {
-    Ok(None)
-  }
+    (None, Some(config_file)) if config_file.is_an_import_map() => {
+      Some(config_file.specifier.clone())
+    }
+    _ => None,
+  };
+  Ok(res)
+  // if let Some(import_map_path) = maybe_import_map_path {
+  //   if let Some(config_file) = &maybe_config_file {
+  //     if config_file.json.import_map.is_some() {
+  //       log::warn!("{} the configuration file \"{}\" contains an entry for \"importMap\" that is being ignored.", colors::yellow("Warning"), config_file.specifier);
+  //     }
+  //   }
+  //   let specifier =
+  //     deno_core::resolve_url_or_path(import_map_path, current_dir)
+  //       .with_context(|| {
+  //         format!("Bad URL (\"{import_map_path}\") for import map.")
+  //       })?;
+  //   Ok(Some(specifier))
+  // } else {
+  //   Ok(None)
+  // }
 }
 
 pub struct StorageKeyResolver(Option<Option<String>>);

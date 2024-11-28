@@ -100,9 +100,9 @@ use crate::worker::ModuleLoaderFactory;
 
 pub mod binary;
 mod code_cache;
-mod file_system;
-mod serialization;
-mod virtual_fs;
+pub mod file_system;
+pub mod serialization;
+pub mod virtual_fs;
 
 pub use binary::extract_standalone;
 pub use binary::is_standalone_binary;
@@ -111,18 +111,30 @@ pub use binary::DenoCompileBinaryWriter;
 use self::binary::Metadata;
 use self::file_system::DenoCompileFileSystem;
 
-struct SharedModuleLoaderState {
-  cjs_tracker: Arc<CjsTracker>,
+// struct SharedModuleLoaderState {
+//   cjs_tracker: Arc<CjsTracker>,
+//   code_cache: Option<Arc<dyn CliCodeCache>>,
+//   fs: Arc<dyn deno_fs::FileSystem>,
+//   modules: StandaloneModules,
+//   node_code_translator: Arc<CliNodeCodeTranslator>,
+//   node_resolver: Arc<NodeResolver>,
+//   npm_module_loader: Arc<NpmModuleLoader>,
+//   npm_req_resolver: Arc<CliNpmReqResolver>,
+//   npm_resolver: Arc<dyn CliNpmResolver>,
+//   vfs: Arc<FileBackedVfs>,
+//   workspace_resolver: WorkspaceResolver,
+pub struct SharedModuleLoaderState {
+  pub cjs_tracker: Arc<CjsTracker>,
   code_cache: Option<Arc<dyn CliCodeCache>>,
-  fs: Arc<dyn deno_fs::FileSystem>,
-  modules: StandaloneModules,
-  node_code_translator: Arc<CliNodeCodeTranslator>,
-  node_resolver: Arc<NodeResolver>,
-  npm_module_loader: Arc<NpmModuleLoader>,
-  npm_req_resolver: Arc<CliNpmReqResolver>,
-  npm_resolver: Arc<dyn CliNpmResolver>,
+  pub fs: Arc<dyn deno_fs::FileSystem>,
+  pub modules: StandaloneModules,
+  pub node_code_translator: Arc<CliNodeCodeTranslator>,
+  pub node_resolver: Arc<NodeResolver>,
+  pub npm_module_loader: Arc<NpmModuleLoader>,
+  pub npm_req_resolver: Arc<CliNpmReqResolver>,
+  pub npm_resolver: Arc<dyn CliNpmResolver>,
   vfs: Arc<FileBackedVfs>,
-  workspace_resolver: WorkspaceResolver,
+  pub workspace_resolver: WorkspaceResolver,
 }
 
 impl SharedModuleLoaderState {
@@ -534,8 +546,8 @@ impl NodeRequireLoader for EmbeddedModuleLoader {
   }
 }
 
-struct StandaloneModuleLoaderFactory {
-  shared: Arc<SharedModuleLoaderState>,
+pub struct StandaloneModuleLoaderFactory {
+  pub shared: Arc<SharedModuleLoaderState>,
 }
 
 impl StandaloneModuleLoaderFactory {
@@ -567,10 +579,10 @@ impl ModuleLoaderFactory for StandaloneModuleLoaderFactory {
   }
 }
 
-struct StandaloneRootCertStoreProvider {
-  ca_stores: Option<Vec<String>>,
-  ca_data: Option<CaData>,
-  cell: once_cell::sync::OnceCell<RootCertStore>,
+pub struct StandaloneRootCertStoreProvider {
+  pub ca_stores: Option<Vec<String>>,
+  pub ca_data: Option<CaData>,
+  pub cell: once_cell::sync::OnceCell<RootCertStore>,
 }
 
 impl RootCertStoreProvider for StandaloneRootCertStoreProvider {
